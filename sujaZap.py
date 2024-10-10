@@ -4,59 +4,22 @@ import random
 from pynput.mouse import Listener
 import pyperclip
 import keyboard
+from functools import partial
 
 frases = [
-    'seu maluco',
-    'doido mesmo',
-    'rei da zoeira',
-    'fazendo graça',
-    'fala sério',
-    'vai nessa',
-    'malandro',
-    'só besteira',
-    'figura',
-    'sorriso negro',
-    'engraçadinho',
-    'aprontando',
-    'só risada',
-    'talento',
-    'bagunça',
-    'humor',
-    'artista',
-    'circo',
-    'nervoso',
-    'aprontou',
-    'cara viado',
-    'piada de mulher',
-    'mestre',
-    'macaco',
-    'bagunça',
-    'apronto',
-    'infame',
-    'irresponsavel',
-    'zoeiro'
+    'vai trabalhar',
+    'voce é um amigo',
+    'você é estranho'
 ]
-posicoes = []
-posicoesSairInicial = []
 
-def on_click(x, y, button, pressed):
+def on_click(x, y, button, pressed, ammount, posicoes):
     if pressed:
         posicoes.append((x, y))
         print(f'Posição do clique: ({x}, {y})')
 
     # Após 5 cliques, para o Listener
-    if len(posicoes) >= 5:
-        print("5 cliques registrados:", posicoes)
-        return False
-
-def on_click_sair(x, y, button, pressed):
-    if pressed:
-        posicoesSairInicial.append((x, y))
-        print(f'Posição do clique: ({x}, {y})')
-
-    # Após 5 cliques, para o Listener
-    if len(posicoesSairInicial) >= 3:
-        print("5 cliques registrados:", posicoesSairInicial)
+    if len(posicoes) >= ammount:
+        print(f"{ammount} cliques registrados:", posicoes)
         return False
 
 def criar_grupo(posicoes, posicoesSair, quantidade, nome):
@@ -113,11 +76,9 @@ def criar_grupo(posicoes, posicoesSair, quantidade, nome):
             print("Execução interrompida.")
             break
 
-
-def definir_posicoes():
-    posicoesCorretas = []
-    posicoesSair = []
-    salvo = input('Tem as posicoes de criar grupo salvas? (s/n): ')
+def guardando_posicoes(texto, quantidade):
+    posicoes = []
+    salvo = input(texto)
 
     if salvo.lower() == 's':
         posicoes_input = input("Cole as posições salvas:")
@@ -126,7 +87,7 @@ def definir_posicoes():
 
             if all(isinstance(i, tuple) and len(i) == 2 for i in posicoesSalvas):
                 print("Posições salvas fornecidas:", posicoesSalvas)
-                posicoesCorretas = posicoesSalvas
+                posicoes = posicoesSalvas
             else:
                 print("Formato inválido. As posições devem ser uma lista de tuplas com 2 elementos.")
                 return
@@ -135,13 +96,21 @@ def definir_posicoes():
             print("Erro: A entrada não está no formato correto.")
             return
     else:
-        print("Crie um grupo nos proximos 5 cliques para salvar as posicoes")
-        time.sleep(2)
+        print(f"Crie um grupo nos proximos {quantidade} cliques para salvar as posicoes")
+        print('3')
+        time.sleep(0.7)
+        print('2')
+        time.sleep(0.7)
+        print('1')
+        time.sleep(0.7)
         pag.hotkey('alt','tab')
 
-        with Listener(on_click=on_click) as listener:
+        on_click_ammount = partial(on_click, ammount=quantidade, posicoes=posicoes)
+        with Listener(on_click=on_click_ammount) as listener:
             listener.join()
 
+        time.sleep(0.3)
+        pag.hotkey('alt','tab')
         print('voce escolheu: ', posicoes)
         posicoes_str = str(posicoes)
 
@@ -149,40 +118,15 @@ def definir_posicoes():
         pyperclip.copy(posicoes_str)
 
         print("As posições foram copiadas para o clipboard.")
-        posicoesCorretas = posicoes
+        return posicoes
 
-    salvoSair = input('Tem as posicoes de sair salvas? (s/n): ')
 
-    if salvoSair.lower() == 's':
-        posicoes_input = input("Cole as posições salvas:")
+def definir_posicoes():
+    posicoesCorretas = []
+    posicoesSair = []
 
-        try:
-            posicoesSairTemp = eval(posicoes_input)
-
-            if all(isinstance(i, tuple) and len(i) == 2 for i in posicoesSairTemp):
-                print("Posições salvas fornecidas:", posicoesSairTemp)
-                posicoesSair = posicoesSairTemp
-            else:
-                print("Formato inválido. As posições devem ser uma lista de tuplas com 2 elementos.")
-                return
-        except (SyntaxError, NameError):
-            print("Erro: A entrada não está no formato correto.")
-            return
-    else:
-        print("Crie um grupo nos proximos 5 cliques para salvar as posicoes")
-        time.sleep(2)
-        pag.hotkey('alt','tab')
-
-        with Listener(on_click=on_click_sair) as listener:
-            listener.join()
-        
-        print('voce escolheu: ', posicoesSairInicial)
-        posicoes_sair = str(posicoesSairInicial)
-
-        pyperclip.copy(posicoes_sair)
-
-        print("As posições foram copiadas para o clipboard.")
-        posicoesSair = posicoesSairInicial
+    posicoesCorretas = guardando_posicoes("Tem as posições de criar grupo? [s/n]: ", 5)
+    posicoesSair = guardando_posicoes("Tem as posições de sair do grupo? [s/n]: ", 3)
 
     quantidade = int(input("Quantos grupos? "))
     nome_contato = input("Nome do contato: ")
