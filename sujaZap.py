@@ -98,6 +98,15 @@ def salvar_posicoes_no_json(posicoes, nome_save):
     with open(caminho_arquivo, 'w') as f:
         json.dump(dados, f, indent=4)
 
+def carregar_posicoes_do_json():
+    caminho_arquivo = 'configs.json'
+
+    # Verifica se o arquivo existe
+    if os.path.exists(caminho_arquivo):
+        with open(caminho_arquivo, 'r') as f:
+            return json.load(f)
+    return None
+
 def guardando_posicoes(texto, quantidade, nome_save):
     posicoes = []
     salvo = input(texto)
@@ -151,14 +160,31 @@ def guardando_posicoes(texto, quantidade, nome_save):
     return posicoes
 
 def definir_posicoes():
-    posicoesCorretas = []
+    posicoesCriar = []
     posicoesSair = []
 
-    posicoesCorretas = guardando_posicoes("Tem as posições de criar grupo? [s/n]: ", 5, 'posicaoCriar')
-    posicoesSair = guardando_posicoes("Tem as posições de sair do grupo? [s/n]: ", 3, 'posicaoSair')
+    posicoes_salvas = carregar_posicoes_do_json()
+
+    if posicoes_salvas is not None:
+        posicoesCriarSalvas = posicoes_salvas['configs'].get('posicaoCriar', [])
+        posicoesSairSalvas = posicoes_salvas['configs'].get('posicaoSair', [])
+
+        print(len(posicoesCriarSalvas))
+
+        if (len(posicoesCriarSalvas) == 5) and (len(posicoesSairSalvas) == 3):
+            confirmacao = input("Deseja utilizar as posições salvas dentro do sistema? [s/n]: ")
+
+            if confirmacao.lower() == 's':
+                posicoesCriar = posicoesCriarSalvas
+                posicoesSair = posicoesSairSalvas
+
+    if not posicoesCriar:
+        posicoesCriar = guardando_posicoes("Tem as posições de criar grupo? [s/n]: ", 5, 'posicaoCriar')
+    if not posicoesSair:
+        posicoesSair = guardando_posicoes("Tem as posições de sair do grupo? [s/n]: ", 3, 'posicaoSair')
 
     quantidade = int(input("Quantos grupos? "))
     nome_contato = input("Nome do contato: ")
-    criar_grupo(posicoesCorretas, posicoesSair, quantidade, nome_contato)
+    criar_grupo(posicoesCriar, posicoesSair, quantidade, nome_contato)
         
 definir_posicoes()
