@@ -6,6 +6,11 @@ import pyperclip
 import keyboard
 from functools import partial
 
+import json
+import os
+
+
+
 frases = [
     'vai trabalhar',
     'voce é um amigo',
@@ -76,7 +81,24 @@ def criar_grupo(posicoes, posicoesSair, quantidade, nome):
             print("Execução interrompida.")
             break
 
-def guardando_posicoes(texto, quantidade):
+def salvar_posicoes_no_json(posicoes, nome_save):
+    caminho_arquivo = 'configs.json'
+
+    if os.path.exists(caminho_arquivo):
+        with open(caminho_arquivo, 'r') as f:
+            dados = json.load(f)
+    else:
+        # Cria um novo conteúdo padrão se o arquivo não existir
+        dados = {"configs": {nome_save: []}}
+
+    # Atualiza as posições no JSON
+    dados['configs'][nome_save] = posicoes
+
+    # Salva o conteúdo atualizado de volta no arquivo
+    with open(caminho_arquivo, 'w') as f:
+        json.dump(dados, f, indent=4)
+
+def guardando_posicoes(texto, quantidade, nome_save):
     posicoes = []
     salvo = input(texto)
 
@@ -87,7 +109,12 @@ def guardando_posicoes(texto, quantidade):
 
             if all(isinstance(i, tuple) and len(i) == 2 for i in posicoesSalvas):
                 print("Posições salvas fornecidas:", posicoesSalvas)
+                if len(posicoesSalvas) != quantidade:
+                    print("As posições salvas devem ter pelo menos", quantidade, "elementos, tente novamente.")
+                    guardando_posicoes(texto, quantidade, nome_save)
+                    return
                 posicoes = posicoesSalvas
+                salvar_posicoes_no_json(posicoes, nome_save)
             else:
                 print("Formato inválido. As posições devem ser uma lista de tuplas com 2 elementos.")
                 return
@@ -117,20 +144,21 @@ def guardando_posicoes(texto, quantidade):
         # Copia a string da lista para o clipboard
         pyperclip.copy(posicoes_str)
 
-        print("As posições foram copiadas para o clipboard.")
-        return posicoes
+        # Salva as posições no arquivo JSON
+        salvar_posicoes_no_json(posicoes, nome_save)
 
+        print("As posições foram copiadas para o clipboard.")
+    return posicoes
 
 def definir_posicoes():
     posicoesCorretas = []
     posicoesSair = []
 
-    posicoesCorretas = guardando_posicoes("Tem as posições de criar grupo? [s/n]: ", 5)
-    posicoesSair = guardando_posicoes("Tem as posições de sair do grupo? [s/n]: ", 3)
+    posicoesCorretas = guardando_posicoes("Tem as posições de criar grupo? [s/n]: ", 5, 'posicaoCriar')
+    posicoesSair = guardando_posicoes("Tem as posições de sair do grupo? [s/n]: ", 3, 'posicaoSair')
 
     quantidade = int(input("Quantos grupos? "))
     nome_contato = input("Nome do contato: ")
     criar_grupo(posicoesCorretas, posicoesSair, quantidade, nome_contato)
         
-
 definir_posicoes()
